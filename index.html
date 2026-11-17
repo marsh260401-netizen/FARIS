@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Faris">
+<meta name="theme-color" content="#0a0e14">
+<link rel="apple-touch-icon" id="touchIcon" href="">
+<title>Faris</title>
+<style>
+:root{
+  --bg:#0a0e14; --panel:#111823; --line:#223046; --fg:#e8eef7; --dim:#8a9bb2;
+  --gold:#f0b44c; --cyan:#4cc9f0; --danger:#ff6b6b;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);-webkit-text-size-adjust:100%}
+body{display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overscroll-behavior:none}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px}
+.brand{font-family:var(--mono);letter-spacing:.42em;font-size:15px;color:var(--gold);font-weight:600}
+.status{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-top:4px}
+button{font:inherit;color:inherit;cursor:pointer}
+.icon-btn{background:none;border:1px solid var(--line);border-radius:10px;padding:8px 12px;color:var(--dim);font-size:13px}
+.icon-btn:focus-visible,.send:focus-visible,.orb:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.chip:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+#log{flex:1;min-height:0;overflow-y:auto;padding:8px 18px 12px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
+.msg{max-width:88%;padding:10px 13px;border-radius:14px;line-height:1.45;font-size:15px;overflow-wrap:anywhere;white-space:pre-wrap}
+.msg.me{align-self:flex-end;background:#16243a;border:1px solid var(--line)}
+.msg.ai{align-self:flex-start;background:var(--panel);border:1px solid var(--line)}
+.msg.sys{align-self:center;color:var(--dim);font-size:12.5px;font-family:var(--mono);text-align:center;max-width:96%}
+.msg.err{color:var(--danger)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-self:flex-start}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;border:1px solid var(--gold);color:var(--gold);text-decoration:none;font-size:14px;font-weight:600}
+.empty{margin:auto;text-align:center;color:var(--dim);font-size:14px;line-height:1.7;padding:0 10px}
+.empty b{color:var(--fg);font-weight:600}
+.empty code{font-family:var(--mono);color:var(--cyan);font-size:13px}
+.dock{padding:8px 16px 14px;display:flex;flex-direction:column;align-items:center;gap:12px;border-top:1px solid var(--line);background:linear-gradient(var(--bg),#0c121b)}
+.orb{position:relative;width:84px;height:84px;border-radius:50%;border:0;background:radial-gradient(circle at 50% 40%,#1c2c44,#0e1624 70%);color:var(--gold);display:grid;place-items:center;box-shadow:0 0 0 1px var(--line)}
+.orb::before{content:"";position:absolute;inset:-7px;border-radius:50%;border:1.5px dashed rgba(240,180,76,.45)}
+.orb svg{width:30px;height:30px}
+.orb.on{color:var(--bg);background:radial-gradient(circle at 50% 40%,#ffd88a,var(--gold) 75%);box-shadow:0 0 28px rgba(240,180,76,.55)}
+.orb.on::before{border-color:var(--cyan);animation:spin 6s linear infinite}
+.orb.busy::before{border-color:var(--cyan);animation:spin 2.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.orb.on::before,.orb.busy::before{animation:none}}
+.row{display:flex;gap:8px;width:100%;max-width:560px}
+.row input{flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--fg);font-size:16px}
+.send{background:var(--gold);color:#1a1204;border:0;border-radius:12px;padding:0 18px;font-weight:700;font-size:15px}
+#settings{position:fixed;inset:0;background:var(--bg);z-index:5;overflow-y:auto;padding:calc(env(safe-area-inset-top) + 14px) max(18px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 24px) max(18px,env(safe-area-inset-left))}
+#settings[hidden]{display:none}
+.panel{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.panel h2{margin:0;font-size:18px;font-weight:600}
+label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--dim)}
+label small{font-size:12px;color:var(--dim);line-height:1.5}
+input[type=text],input[type=password],select,textarea{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--fg);font-size:16px;font-family:inherit}
+textarea{min-height:110px;font-family:var(--mono);font-size:14px}
+.check{flex-direction:row;align-items:center;gap:10px;color:var(--fg);font-size:15px}
+.check input{width:20px;height:20px;accent-color:var(--gold)}
+.save{background:var(--gold);color:#1a1204;border:0;border-radius:12px;padding:13px;font-weight:700;font-size:16px}
+a.link{color:var(--cyan)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="brand">FARIS</div>
+    <div class="status" id="status">taiyar</div>
+  </div>
+  <button class="icon-btn" id="openSettings" type="button">Settings</button>
+</header>
+
+<main id="log" aria-live="polite"></main>
+
+<div class="dock">
+  <button class="orb" id="mic" type="button" aria-label="Bolne ke liye dabao">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+  </button>
+  <form class="row" id="form" autocomplete="off">
+    <input id="text" type="text" placeholder="Ya yahan likho / keyboard ka mic dabao" enterkeyhint="send" autocapitalize="none">
+    <button class="send" type="submit">Bhejo</button>
+  </form>
+</div>
+
+<section id="settings" hidden>
+  <div class="panel">
+    <h2>Faris Settings</h2>
+
+    <label>Gemini API key (free)
+      <input id="apiKey" type="password" placeholder="AIza..." autocomplete="off" autocapitalize="none" spellcheck="false">
+      <small>aistudio.google.com par free key banao. Key sirf is phone ke browser mein save hoti hai.</small>
+    </label>
+
+    <label>Gemini model
+      <input id="model" type="text" value="gemini-flash-latest" autocapitalize="none" spellcheck="false">
+      <small>Error aaye to aistudio.google.com par dikhne wala koi doosra Flash model naam yahan daalo.</small>
+    </label>
+
+    <label>Sunne ki bhasha
+      <select id="lang">
+        <option value="hi-IN">Hindi + English mix (hi-IN)</option>
+        <option value="en-IN">English (en-IN)</option>
+      </select>
+    </label>
+
+    <label>Gaana kahan chale
+      <select id="music">
+        <option value="youtube">YouTube</option>
+        <option value="spotify">Spotify</option>
+        <option value="music">Apple Music</option>
+      </select>
+    </label>
+
+    <label>Contacts (har line mein: Naam = Number)
+      <textarea id="contacts" placeholder="Mummy = 9876543210&#10;Rahul = 9123456780" spellcheck="false" autocapitalize="none"></textarea>
+      <small>WhatsApp aur call ke liye zaroori. Sirf is browser mein save hota hai.</small>
+    </label>
+
+    <label>Country code
+      <input id="cc" type="text" value="91" inputmode="numeric">
+    </label>
+
+    <label class="check"><input type="checkbox" id="voice" checked> Faris awaaz mein jawab de</label>
+
+    <button class="save" id="saveSettings" type="button">Save</button>
+    <button class="icon-btn" id="clearChat" type="button">Chat saaf karo</button>
+  </div>
+</section>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  /* ---------- home screen icon (iOS reads this when you tap Add to Home Screen) ---------- */
+  try {
+    var c = document.createElement("canvas"); c.width = c.height = 180;
+    var g = c.getContext("2d");
+    g.fillStyle = "#0a0e14"; g.fillRect(0, 0, 180, 180);
+    g.strokeStyle = "#f0b44c"; g.lineWidth = 6; g.beginPath(); g.arc(90, 90, 58, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = "#4cc9f0"; g.lineWidth = 3; g.setLineDash([8, 10]); g.beginPath(); g.arc(90, 90, 74, 0, Math.PI * 2); g.stroke();
+    g.setLineDash([]); g.fillStyle = "#f0b44c"; g.font = "700 64px -apple-system,sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("F", 90, 94);
+    $("touchIcon").href = c.toDataURL("image/png");
+  } catch (e) {}
+
+  /* ---------- apps ---------- */
+  var APPS = {
+    whatsapp:  { name: "WhatsApp",  url: "whatsapp://",  words: ["whatsapp", "whats app", "व्हाट्सएप", "वॉट्सऐप", "वाट्सएप", "व्हाट्सऐप"] },
+    instagram: { name: "Instagram", url: "instagram://app", words: ["instagram", "insta", "इंस्टाग्राम", "इंस्टा"] },
+    youtube:   { name: "YouTube",   url: "youtube://",   words: ["youtube", "you tube", "यूट्यूब", "यूट्यब"] },
+    spotify:   { name: "Spotify",   url: "spotify://",   words: ["spotify", "स्पॉटिफाई"] },
+    music:     { name: "Apple Music", url: "music://",   words: ["apple music", "ऐप्पल म्यूजिक"] },
+    telegram:  { name: "Telegram",  url: "tg://",        words: ["telegram", "टेलीग्राम"] },
+    facebook:  { name: "Facebook",  url: "fb://",        words: ["facebook", "फेसबुक"] },
+    snapchat:  { name: "Snapchat",  url: "snapchat://",  words: ["snapchat", "स्नैपचैट"] },
+    twitter:   { name: "X",         url: "twitter://",   words: ["twitter", "ट्विटर"] },
+    maps:      { name: "Maps",      url: "maps://",      words: ["maps", "map", "मैप", "नक्शा"] },
+    gmail:     { name: "Gmail",     url: "googlegmail://", words: ["gmail", "जीमेल"] },
+    mail:      { name: "Mail",      url: "message://",   words: ["mail", "email", "ईमेल", "मेल"] },
+    messages:  { name: "Messages",  url: "sms:",         words: ["messages", "imessage", "मैसेज ऐप"] },
+    phone:     { name: "Phone",     url: "tel:",         words: ["phone app", "dialer", "डायलर"] },
+    photos:    { name: "Photos",    url: "photos-redirect://", words: ["photos", "gallery", "फोटो", "गैलरी"] },
+    notes:     { name: "Notes",     url: "mobilenotes://", words: ["notes", "नोट्स"] },
+    chrome:    { name: "Chrome",    url: "googlechromes://", words: ["chrome", "क्रोम"] },
+    safari:    { name: "Safari",    url: "https://www.google.com", words: ["safari", "सफारी", "browser", "ब्राउज़र"] },
+    gpay:      { name: "Google Pay", url: "gpay://",     words: ["gpay", "google pay", "जीपे"] },
+    phonepe:   { name: "PhonePe",   url: "phonepe://",   words: ["phonepe", "phone pe", "फोनपे"] },
+    paytm:     { name: "Paytm",     url: "paytm://",     words: ["paytm", "पेटीएम"] },
+    amazon:    { name: "Amazon",    url: "amazon://",    words: ["amazon", "अमेज़न", "अमेजन"] },
+    flipkart:  { name: "Flipkart",  url: "flipkart://",  words: ["flipkart", "फ्लिपकार्ट"] },
+    zomato:    { name: "Zomato",    url: "zomato://",    words: ["zomato", "ज़ोमैटो", "जोमैटो"] },
+    swiggy:    { name: "Swiggy",    url: "swiggy://",    words: ["swiggy", "स्विगी"] },
+    netflix:   { name: "Netflix",   url: "nflx://",      words: ["netflix", "नेटफ्लिक्स"] }
+  };
+
+  var OPEN_W = ["open", "kholo", "khol do", "kholdo", "khol", "chalu", "start", "launch", "खोलो", "खोल", "चालू", "ओपन"];
+  var MSG_W  = ["message", "msg", "massage", "bhejo", "bhej", "send", "likho", "मैसेज", "भेजो", "भेज", "लिखो"];
+  var CALL_W = ["call", "phone lagao", "fone", "dial", "कॉल", "फोन लगा", "फ़ोन लगा"];
+  var PLAY_W = ["gaana", "gana", "gaane", "song", "play", "bajao", "baja do", "sunao", "sunaao", "lagao", "गाना", "गाने", "बजाओ", "सुनाओ", "प्ले", "लगाओ"];
+  var MAP_W  = ["rasta", "navigate", "directions", "route", "raasta", "रास्ता", "नेविगेट"];
+  var SRCH_W = ["search", "khojo", "dhundo", "google", "सर्च", "खोजो", "ढूंढो"];
+  var FILLER = ["ko", "ka", "ki", "ke", "ye", "yeh", "ek", "please", "plz", "faris", "फारिस", "फैरिस", "ज़रा", "zara", "mera", "meri", "mere", "me", "mein", "main", "par", "pe", "karo", "kar", "do", "de", "to", "the", "a", "on", "कर", "दो", "को", "का", "की", "के", "एक", "मेरा", "मेरे", "पर", "में", "ज़रा", "जरा", "करो"];
+
+  /* ---------- contacts & helpers ---------- */
+  function getContacts() {
+    var out = [];
+    store.get("contacts", "").split(/\n+/).forEach(function (line) {
+      var m = line.match(/^\s*(.+?)\s*[=:,]\s*([+\d][\d\s\-()+]{5,})\s*$/);
+      if (m) out.push({ name: m[1].trim(), number: m[2].replace(/[^\d+]/g, "") });
+    });
+    return out;
+  }
+  function normNumber(n) {
+    var d = String(n).replace(/[^\d]/g, "");
+    var cc = store.get("cc", "91").replace(/\D/g, "") || "91";
+    if (d.length === 10) d = cc + d;
+    return d;
+  }
+  function resolveTo(to) {
+    if (!to) return null;
+    var digits = String(to).replace(/[^\d]/g, "");
+    if (digits.length >= 8) return { name: to, number: normNumber(to) };
+    var low = String(to).toLowerCase();
+    var cs = getContacts();
+    for (var i = 0; i < cs.length; i++) {
+      var n = cs[i].name.toLowerCase();
+      if (n === low || n.split(" ")[0] === low || low.indexOf(n) !== -1 || n.indexOf(low) !== -1) {
+        return { name: cs[i].name, number: normNumber(cs[i].number) };
+      }
+    }
+    return null;
+  }
+  function findContactIn(s) {
+    var cs = getContacts();
+    for (var i = 0; i < cs.length; i++) {
+      var full = cs[i].name.toLowerCase(), first = full.split(" ")[0];
+      var key = s.indexOf(full) !== -1 ? full : (s.indexOf(first) !== -1 ? first : null);
+      if (key) return { name: cs[i].name, number: normNumber(cs[i].number), key: key };
+    }
+    return null;
+  }
+  function enc(s) { return encodeURIComponent(s); }
+
+  /* ---------- action -> link ---------- */
+  function buildLink(a) {
+    if (!a || !a.type) return null;
+    var t = a.type, p;
+    if (t === "open_app") {
+      var app = APPS[String(a.app || "").toLowerCase()];
+      return app ? { label: app.name + " kholo", url: app.url } : null;
+    }
+    if (t === "whatsapp") {
+      p = resolveTo(a.to);
+      if (!p) return { error: "Contact nahi mila: " + (a.to || "?") + ". Settings mein Naam = Number likho." };
+      return { label: "WhatsApp: " + p.name, url: "whatsapp://send?phone=" + p.number + (a.text ? "&text=" + enc(a.text) : "") };
+    }
+    if (t === "call") {
+      p = resolveTo(a.to);
+      if (!p) return { error: "Contact nahi mila: " + (a.to || "?") + ". Settings mein Naam = Number likho." };
+      return { label: "Call: " + p.name, url: "tel:+" + p.number };
+    }
+    if (t === "sms") {
+      p = resolveTo(a.to);
+      if (!p) return { error: "Contact nahi mila: " + (a.to || "?") };
+      return { label: "SMS: " + p.name, url: "sms:+" + p.number + (a.text ? "&body=" + enc(a.text) : "") };
+    }
+    if (t === "play") {
+      var q = a.query || "", svc = a.service || store.get("music", "youtube");
+      if (svc === "spotify") return { label: "Spotify: " + q, url: "spotify:search:" + enc(q) };
+      if (svc === "music") return { label: "Apple Music: " + q, url: "music://music.apple.com/search?term=" + enc(q) };
+      return { label: "YouTube: " + q, url: "https://www.youtube.com/results?search_query=" + enc(q) };
+    }
+    if (t === "search") return { label: "Search: " + a.query, url: "https://www.google.com/search?q=" + enc(a.query || "") };
+    if (t === "maps") return { label: "Maps: " + a.query, url: "https://maps.apple.com/?q=" + enc(a.query || "") };
+    if (t === "url" && /^https:\/\//i.test(a.url || "")) return { label: "Link kholo", url: a.url };
+    return null;
+  }
+
+  /* ---------- offline keyword brain (no key needed) ---------- */
+  function hasAny(s, arr) { for (var i = 0; i < arr.length; i++) if (s.indexOf(arr[i]) !== -1) return true; return false; }
+  function stripWords(s, lists) {
+    var words = s.split(/\s+/), all = [].concat.apply([], lists);
+    return words.filter(function (w) { return w && all.indexOf(w) === -1; }).join(" ").trim();
+  }
+  function appIn(s) {
+    var best = null, keys = Object.keys(APPS);
+    for (var i = 0; i < keys.length; i++) {
+      var ws = APPS[keys[i]].words;
+      for (var j = 0; j < ws.length; j++) if (s.indexOf(ws[j]) !== -1) { if (!best || ws[j].length > best.len) best = { id: keys[i], len: ws[j].length }; }
+    }
+    return best ? best.id : null;
+  }
+  function localParse(raw) {
+    var s = raw.toLowerCase().replace(/[.,!?।]/g, " ").replace(/\s+/g, " ").trim();
+    var contact = findContactIn(s);
+
+    if (contact && hasAny(s, CALL_W)) {
+      return { reply: contact.name + " ko call lagata hoon", actions: [{ type: "call", to: contact.name }] };
+    }
+    if (contact && hasAny(s, MSG_W)) {
+      var after = s.slice(s.indexOf(contact.key) + contact.key.length).trim().split(" ");
+      var skip = FILLER.concat(MSG_W, ["whatsapp", "bolo", "bol", "that", "tell", "व्हाट्सएप", "बोलो"]);
+      while (after.length && skip.indexOf(after[0]) !== -1) after.shift();
+      return { reply: contact.name + " ko WhatsApp message taiyar hai", actions: [{ type: "whatsapp", to: contact.name, text: after.join(" ") }] };
+    }
+    if (hasAny(s, PLAY_W)) {
+      var q = stripWords(s, [PLAY_W, FILLER, OPEN_W, ["youtube", "spotify", "music", "यूट्यूब"]]);
+      if (q) return { reply: q + " chalata hoon", actions: [{ type: "play", query: q }] };
+    }
+    if (hasAny(s, MAP_W)) {
+      var m = stripWords(s, [MAP_W, FILLER, OPEN_W, ["maps", "map", "मैप"]]);
+      if (m) return { reply: m + " ka rasta dikhata hoon", actions: [{ type: "maps", query: m }] };
+    }
+    var app = appIn(s);
+    if (app && (hasAny(s, OPEN_W) || s.split(" ").length <= 3)) {
+      return { reply: APPS[app].name + " khol raha hoon", actions: [{ type: "open_app", app: app }] };
+    }
+    if (hasAny(s, SRCH_W)) {
+      var sq = stripWords(s, [SRCH_W, FILLER]);
+      if (sq) return { reply: sq + " search karta hoon", actions: [{ type: "search", query: sq }] };
+    }
+    return null;
+  }
+
+  /* ---------- Gemini brain ---------- */
+  var history = [];
+  function systemPrompt() {
+    var cs = getContacts().map(function (c) { return c.name; }).join(", ") || "(koi nahi)";
+    return [
+      "Tum Faris ho, ek dost jaisa voice assistant, Iron Man ke Jarvis ki tarah. User iPhone par hai. Tum Hindi, English aur Hinglish teeno samajhte ho.",
+      "Hamesha sirf ek JSON object do, aur kuch nahi: {\"reply\": string, \"actions\": array}.",
+      "reply: chhota, dostana jawab (1-2 vakya). User ne Devanagari mein bola to Devanagari Hindi mein, roman Hinglish mein bola to roman Hinglish mein, English mein bola to English mein jawab do.",
+      "actions mein user ka kaam (khali array agar sirf baat-cheet ho). Har action in mein se ek:",
+      "{\"type\":\"open_app\",\"app\":\"" + Object.keys(APPS).join("|") + "\"}",
+      "{\"type\":\"whatsapp\",\"to\":\"contact ka naam ya number\",\"text\":\"bhejne wala message\"}",
+      "{\"type\":\"call\",\"to\":\"contact ka naam ya number\"}",
+      "{\"type\":\"sms\",\"to\":\"naam ya number\",\"text\":\"message\"}",
+      "{\"type\":\"play\",\"query\":\"gaane ka naam aur artist\",\"service\":\"youtube|spotify|music\"}  (service tabhi do jab user ne bola ho)",
+      "{\"type\":\"search\",\"query\":\"...\"}  {\"type\":\"maps\",\"query\":\"jagah ka naam\"}",
+      "Saved contacts: " + cs + ". 'to' mein inhi ka naam do jab user inhe bole.",
+      "Tum phone ke andar tap ya scroll nahi kar sakte, sirf app kholna, search, call, message taiyar karna aur gaana dhundhna kar sakte ho. Message khud send nahi hota, user ko Send dabana padta hai. Ye baat jhooth mat bolna.",
+      "Gaana gaa nahi sakte, par gaana chalane ka action de sakte ho. Sawaal ka jawab seedha reply mein do."
+    ].join("\n");
+  }
+  function askGemini(userText) {
+    var key = store.get("apiKey", "");
+    var model = store.get("model", "gemini-flash-latest") || "gemini-flash-latest";
+    var contents = history.slice(-8).concat([{ role: "user", parts: [{ text: userText }] }]);
+    return fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt() }] },
+        contents: contents,
+        generationConfig: { temperature: 0.5, responseMimeType: "application/json" }
+      })
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.text().then(function (t) {
+          var msg = ""; try { msg = JSON.parse(t).error.message; } catch (e) {}
+          var err = new Error("HTTP " + r.status + (msg ? " - " + msg : "")); err.status = r.status; throw err;
+        });
+      }
+      return r.json();
+    }).then(function (d) {
+      var txt = d && d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts
+        ? d.candidates[0].content.parts.map(function (p) { return p.text || ""; }).join("") : "";
+      var obj;
+      try { obj = JSON.parse(txt); } catch (e) {
+        var m = txt.match(/\{[\s\S]*\}/);
+        try { obj = m ? JSON.parse(m[0]) : null; } catch (e2) { obj = null; }
+      }
+      if (!obj) obj = { reply: txt || "Kuch gadbad ho gayi, dobara bolo.", actions: [] };
+      history.push({ role: "user", parts: [{ text: userText }] });
+      history.push({ role: "model", parts: [{ text: JSON.stringify(obj) }] });
+      history = history.slice(-12);
+      return obj;
+    });
+  }
+
+  /* ---------- UI ---------- */
+  var log = $("log"), statusEl = $("status"), mic = $("mic"), input = $("text");
+
+  function setStatus(t, mode) {
+    statusEl.textContent = t;
+    mic.classList.toggle("on", mode === "listen");
+    mic.classList.toggle("busy", mode === "busy");
+  }
+  function clearEmpty() { var e = log.querySelector(".empty"); if (e) e.remove(); }
+  function addMsg(cls, text) {
+    clearEmpty();
+    var d = document.createElement("div"); d.className = "msg " + cls; d.textContent = text;
+    log.appendChild(d); log.scrollTop = log.scrollHeight; return d;
+  }
+  function addChips(links) {
+    if (!links.length) return;
+    var wrap = document.createElement("div"); wrap.className = "chips";
+    links.forEach(function (l) {
+      var a = document.createElement("a"); a.className = "chip"; a.href = l.url; a.textContent = l.label;
+      if (/^https?:/i.test(l.url)) { a.target = "_blank"; a.rel = "noopener"; }
+      wrap.appendChild(a);
+    });
+    log.appendChild(wrap); log.scrollTop = log.scrollHeight;
+  }
+  function showEmpty() {
+    var d = document.createElement("div"); d.className = "empty";
+    d.innerHTML = "<b>Main Faris hoon.</b><br>Mic dabao aur bolo:<br><code>WhatsApp kholo</code><br><code>Rahul ko message bhejo ki main late hoon</code><br><code>Tum hi ho gaana lagao</code><br><br>Pehle Settings mein Gemini key aur contacts daalo.";
+    log.appendChild(d);
+  }
+
+  /* ---------- voice out ---------- */
+  function speak(text) {
+    if (store.get("voice", "1") !== "1" || !window.speechSynthesis || !text) return;
+    try {
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var hi = /[\u0900-\u097F]/.test(text);
+      u.lang = hi ? "hi-IN" : "en-IN";
+      var vs = speechSynthesis.getVoices();
+      for (var i = 0; i < vs.length; i++) { if (vs[i].lang.replace("_", "-") === u.lang) { u.voice = vs[i]; break; } }
+      u.rate = 1;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  /* ---------- run a command ---------- */
+  var busy = false;
+  function handle(text) {
+    text = (text || "").trim();
+    if (!text || busy) return;
+    busy = true;
+    input.value = "";
+    addMsg("me", text);
+    setStatus("soch raha hoon...", "busy");
+
+    var hasKey = !!store.get("apiKey", "");
+    var p;
+    if (hasKey) {
+      p = askGemini(text).catch(function (e) {
+        addMsg("sys err", "Gemini se jawab nahi aaya (" + e.message + "). Offline mode try kar raha hoon.");
+        return localParse(text);
+      });
+    } else {
+      p = Promise.resolve(localParse(text));
+    }
+    p.then(function (res) {
+      if (!res) {
+        res = { reply: hasKey ? "Ye samajh nahi aaya, dobara bolo." : "Ye samajh nahi aaya. Settings mein Gemini key daalo to main har baat samajh paunga.", actions: [] };
+      }
+      var reply = String(res.reply || "");
+      var links = [];
+      (Array.isArray(res.actions) ? res.actions : []).forEach(function (a) {
+        var l = buildLink(a);
+        if (!l) return;
+        if (l.error) addMsg("sys err", l.error); else links.push(l);
+      });
+      if (reply) addMsg("ai", reply);
+      addChips(links);
+      speak(reply);
+      if (links.length) {
+        setStatus("khol raha hoon...", null);
+        setTimeout(function () { window.location.href = links[0].url; }, reply ? 900 : 200);
+        if (links.length === 1) addMsg("sys", "App na khule to upar wala button dabao.");
+      }
+    }).catch(function (e) {
+      addMsg("sys err", "Error: " + e.message);
+    }).then(function () {
+      busy = false;
+      setStatus("taiyar", null);
+    });
+  }
+
+  /* ---------- mic ---------- */
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var rec = null, listening = false, gotResult = false;
+  function stopListening() { try { if (rec) rec.stop(); } catch (e) {} }
+  function startListening() {
+    if (!SR) { addMsg("sys err", "Is browser mein mic support nahi. Keyboard ka mic dabake bolo."); input.focus(); return; }
+    if (listening) { stopListening(); return; }
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+    rec = new SR();
+    rec.lang = store.get("lang", "hi-IN");
+    rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+    gotResult = false;
+    rec.onstart = function () { listening = true; setStatus("sun raha hoon...", "listen"); };
+    rec.onresult = function (e) {
+      var t = "";
+      for (var i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      input.value = t;
+      if (e.results[e.results.length - 1].isFinal) { gotResult = true; handle(t); }
+    };
+    rec.onerror = function (e) {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        addMsg("sys err", "Mic ki permission nahi mili. Safari mein kholo aur Allow karo. Agar Home Screen icon se khola hai to Safari tab mein kholo, ya keyboard ka mic use karo.");
+      } else if (e.error === "no-speech") {
+        addMsg("sys", "Kuch sunai nahi diya, dobara try karo.");
+      } else if (e.error !== "aborted") {
+        addMsg("sys err", "Mic error: " + e.error);
+      }
+    };
+    rec.onend = function () { listening = false; if (!busy) setStatus("taiyar", null); };
+    try { rec.start(); } catch (e) { addMsg("sys err", "Mic start nahi hua: " + e.message); }
+  }
+
+  /* ---------- wire up ---------- */
+  mic.addEventListener("click", startListening);
+  $("form").addEventListener("submit", function (e) { e.preventDefault(); handle(input.value); });
+
+  var panel = $("settings");
+  function loadSettings() {
+    $("apiKey").value = store.get("apiKey", "");
+    $("model").value = store.get("model", "gemini-flash-latest");
+    $("lang").value = store.get("lang", "hi-IN");
+    $("music").value = store.get("music", "youtube");
+    $("contacts").value = store.get("contacts", "");
+    $("cc").value = store.get("cc", "91");
+    $("voice").checked = store.get("voice", "1") === "1";
+  }
+  $("openSettings").addEventListener("click", function () { loadSettings(); panel.hidden = false; });
+  $("saveSettings").addEventListener("click", function () {
+    store.set("apiKey", $("apiKey").value.trim());
+    store.set("model", $("model").value.trim() || "gemini-flash-latest");
+    store.set("lang", $("lang").value);
+    store.set("music", $("music").value);
+    store.set("contacts", $("contacts").value);
+    store.set("cc", $("cc").value.trim() || "91");
+    store.set("voice", $("voice").checked ? "1" : "0");
+    panel.hidden = true;
+    addMsg("sys", "Settings save ho gayi.");
+  });
+  $("clearChat").addEventListener("click", function () {
+    history = []; log.innerHTML = ""; showEmpty(); panel.hidden = true;
+  });
+
+  if (window.speechSynthesis) { try { speechSynthesis.getVoices(); } catch (e) {} }
+  showEmpty();
+})();
+</script>
+</body>
+</html>
